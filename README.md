@@ -95,13 +95,6 @@ Both scripts are shell-only and make no network calls beyond `git`.
 | Unit testing | LiteSVM / Mollusk |
 | Authority | Squads v4 multisig |
 
-## Agents
-
-| Agent | Model | Role |
-| --- | --- | --- |
-| `program-migration-architect` | opus | Plan a migration from a schema diff + constraints; output a plan + risk report |
-| `migration-qa-engineer` | opus | Write fork/LiteSVM/Mollusk tests, verify no corruption + idempotency before mainnet |
-
 ## Commands
 
 | Command | What it does |
@@ -180,4 +173,4 @@ devnet/localnet.
 
 MIT - see [LICENSE](LICENSE).
 
-Maintained by <YOUR HANDLE>.
+Maintained by [@mitgajera](https://github.com/mitgajera).
