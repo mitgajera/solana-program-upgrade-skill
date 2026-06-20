@@ -1,0 +1,42 @@
+# --- Rust / Anchor ---
+target/
+**/*.rs.bk
+Cargo.lock
+.anchor/
+test-ledger/
+.crates.toml
+.crates2.json
+
+# --- Solana keypairs / build artifacts ---
+*.so
+**/deploy/*.json
+keypair.json
+*-keypair.json
+
+# --- Node / JS ---
+node_modules/
+dist/
+build/
+.pnp.*
+.yarn/*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Testing ---
+coverage/
+.nyc_output/
+.litesvm/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
