@@ -4,6 +4,14 @@ Pick the migration approach *before* you write code - it determines your
 versioning, your instructions, and your operational cost. There are three core
 strategies; the right one depends on account count, downtime tolerance, and rent.
 
+## Contents
+
+- [Selection table](#selection-table)
+- [When in-place `realloc` is impossible](#when-in-place-realloc-is-impossible)
+- [Batch migration via keeper / crank (large sets)](#batch-migration-via-keeper--crank-large-sets)
+- [Cost, downtime, and rent](#cost-downtime-and-rent)
+- [Common errors](#common-errors)
+
 ## Selection table
 
 | | Eager (one-shot crank) | Lazy (migrate-on-touch) | Copy-to-new-account |

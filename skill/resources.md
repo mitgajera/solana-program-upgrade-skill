@@ -45,8 +45,8 @@ the version you have installed** (`anchor --version`, `solana --version`).
 - **Squads - Programs (developer assets)** - transferring upgrade authority and
   executing upgrades through the multisig.
   https://docs.squads.so/main/navigating-your-squad/developers-assets/programs
-- **Squads-Protocol/squads-v4-program-upgrade** - tooling for building the upgrade
-  proposal (buffer + program upgrade).
+- **Squads-Protocol/squads-v4-program-upgrade** - GitHub Action to initialize a
+  program upgrade through a Squads multisig from CI/CD.
   https://github.com/Squads-Protocol/squads-v4-program-upgrade
 - **solana-developers/squads-program-action** - GitHub Action to propose program +
   IDL buffer upgrades to a Squad from CI.

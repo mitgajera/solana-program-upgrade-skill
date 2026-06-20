@@ -1,6 +1,6 @@
 # solana-program-upgrade-skill
 
-A Claude Code [Agent Skill](https://docs.claude.com/en/docs/claude-code/skills)
+A Claude Code [Agent Skill](https://code.claude.com/docs/en/skills)
 that makes **upgrading a live Solana program and migrating its on-chain account
 data safe** - versioning, lazy `realloc` migration, the Anchor `Migration` type,
 upgrade-authority hygiene (Squads multisig), fork-simulation before mainnet, and

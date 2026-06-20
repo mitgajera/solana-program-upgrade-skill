@@ -148,7 +148,7 @@ pub fn touch_vault(ctx: Context<TouchVault>) -> Result<()> {
             needed - current,
         )?;
     }
-    vault_ai.realloc(new_len, false)?; // we overwrite the whole body below
+    vault_ai.resize(new_len)?; // grow in place (see the resize vs realloc note below)
 
     // 4. Write the new layout. try_serialize writes discriminator + borsh body.
     let migrated = Vault {
@@ -168,6 +168,25 @@ After migration the account carries `version = 2` and the full new layout. Every
 later instruction can safely type it as `Account<'info, Vault>` once you are
 confident all accounts are migrated, or keep the version branch for as long as
 old accounts may exist.
+
+## `resize` vs `realloc` (current method name)
+
+The `AccountInfo` **method** for resizing in the instruction body is now
+`resize(new_len)`. The older `realloc(new_len, zero_init)` method is **deprecated
+since `solana-account-info` 2.3.0** and **removed in the 3.x line** - on a current
+toolchain it will not even exist, so use `resize`:
+
+```rust
+vault_ai.resize(new_len)?;        // current Solana (no zero_init argument)
+// vault_ai.realloc(new_len, false)?; // old, deprecated/removed - do not use on 3.x
+```
+
+`resize` takes no `zero_init` flag: when it grows an account it **always zeroes the
+newly added bytes**, and it returns `ProgramError::InvalidRealloc` if the growth
+exceeds the per-transaction cap. Note this is the *method*; the Anchor **constraint**
+is still spelled `realloc = ...` / `realloc::zero = ...` (Anchor has not renamed the
+constraint). Verify what your `solana-program` / `anchor-lang` versions expose
+(`cargo tree`), since this name changed across the 2.x to 3.x transition.
 
 ## Idempotency
 
@@ -200,27 +219,30 @@ you cannot shrink in place without losing it - copy to a new account instead
 
 ## The `realloc::zero = false` footgun
 
-`realloc::zero = false` does **not** guarantee the newly exposed bytes are zero.
-The runtime zeroes appended bytes at the start of an instruction, but **not**
-across multiple reallocs within the same instruction - so reused memory can hold
-**stale bytes**. If you grow an account and then read the new region without
-writing it, you may read garbage.
+This is about the Anchor **constraint** `realloc::zero` (not the `resize` method).
+`realloc::zero = false` does **not** guarantee the newly exposed bytes are zero
+across **multiple reallocs within the same instruction** - reused memory can hold
+**stale bytes** from an earlier resize in the same tx. If you grow, shrink, and
+grow again in one instruction and then read the new region without writing it, you
+may read garbage.
 
 Two safe rules:
 
 - If you **overwrite the whole body** during migration (as above), `false` is
   correct and cheaper.
-- If you grow and **rely on the new region being zero** without writing it, set
-  `realloc::zero = true`, or zero it yourself.
+- If you do repeated reallocs in one instruction and **rely on the new region
+  being zero** without writing it, set `realloc::zero = true`, or zero it yourself.
 
-Confirm the exact zeroing behavior against your Anchor and runtime versions before
-depending on it.
+Note: the underlying `resize` method always zeroes the bytes added by a **single**
+grow, so a one-shot migration grow is clean either way. The footgun is the
+repeated-realloc-in-one-instruction case. Confirm the exact zeroing behavior
+against your Anchor and runtime versions before depending on it.
 
 ## The ~10 KB per-transaction growth cap
 
 An account can grow by at most **`MAX_PERMITTED_DATA_INCREASE` = 10,240 bytes
-(10 KB) per transaction**. A single `realloc` (or the sum of reallocs in one tx)
-that exceeds this fails.
+(10 KB) per transaction**. A single `resize` (or the sum of resizes in one tx)
+that exceeds this fails with `ProgramError::InvalidRealloc`.
 
 ```rust
 use anchor_lang::solana_program::entrypoint::MAX_PERMITTED_DATA_INCREASE; // = 10 * 1024
@@ -249,7 +271,7 @@ count and downtime tolerance in `migration-strategies.md`.
 
 ## Native manual equivalent
 
-No Anchor sugar: you own the version byte, `realloc`, and the rent transfer.
+No Anchor sugar: you own the version byte, the `resize`, and the rent transfer.
 
 ```rust
 use solana_program::{
@@ -264,7 +286,7 @@ pub fn migrate_native(
     new_len: usize,
 ) -> Result<(), ProgramError> {
     if vault.owner != &crate::ID {
-        return Err(ProgramError::IllegalOwner); // can only realloc your own accounts
+        return Err(ProgramError::IllegalOwner); // can only resize your own accounts
     }
 
     let needed = Rent::get()?.minimum_balance(new_len);
@@ -283,7 +305,7 @@ pub fn migrate_native(
         **payer.try_borrow_mut_lamports()? += refund;
     }
 
-    vault.realloc(new_len, false)?; // same 10 KB/tx cap applies
+    vault.resize(new_len)?; // current method; same 10 KB/tx cap applies
     // ...then read old bytes (front cursor), write the new layout + version byte.
     Ok(())
 }
@@ -298,10 +320,11 @@ serialize) you do explicitly here.
 | Error / symptom | Cause | Fix |
 | --- | --- | --- |
 | `AccountDidNotDeserialize` using `Account<NewType>` + realloc constraint | Anchor deserializes the new type from old, shorter bytes before realloc runs | Migrate in the body via `UncheckedAccount` (above), or use the `Migration` type |
-| realloc fails / "data increase exceeds maximum" | Grew more than 10,240 bytes in one transaction | Split the growth across multiple transactions, each adding up to 10 KB |
-| Account no longer rent-exempt after grow | Resized without topping up lamports | Transfer `minimum_balance(new_len) - current` into the account before/after realloc |
-| New field reads as garbage | Assumed `realloc::zero = false` leaves zeros | Overwrite the new region explicitly, or set `realloc::zero = true` |
-| `IllegalOwner` / realloc rejected (native) | Tried to realloc an account your program does not own | Only resize program-owned accounts |
+| `InvalidRealloc` / "data increase exceeds maximum" | Grew more than 10,240 bytes in one transaction | Split the growth across multiple transactions, each adding up to 10 KB |
+| Account no longer rent-exempt after grow | Resized without topping up lamports | Transfer `minimum_balance(new_len) - current` into the account before/after the resize |
+| `resize`/`realloc` method not found on `AccountInfo` | Toolchain renamed it: `realloc(len, zero_init)` was deprecated (2.3.0) and removed in 3.x | Use `resize(new_len)` on current Solana; check `cargo tree` for your version |
+| New field reads as garbage | Assumed `realloc::zero = false` zeros across repeated reallocs in one tx | Overwrite the new region explicitly, or set `realloc::zero = true` |
+| `IllegalOwner` / resize rejected (native) | Tried to resize an account your program does not own | Only resize program-owned accounts |
 | Migration double-applies or version resets | Missing `version < CURRENT` guard | Gate on the stored version and bump it in the same write |
 | Lamports lost / payer not refunded on shrink | Forgot to move freed rent back | Use `realloc::payer` (Anchor) or debit/credit lamports manually (native) |
 
