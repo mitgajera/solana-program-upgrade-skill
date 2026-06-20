@@ -6,24 +6,23 @@ Anchor [PR #4060](https://github.com/coral-xyz/anchor/pull/4060) adds a
 plus a `.migrate(..)` call. It is sugar over the same `realloc` mechanics covered
 in `realloc-migration.md`.
 
-> ## Read this first: it may not be in your Anchor version
+> ## Read this first: verify it is in your Anchor version
 >
-> The `Migration` type was **merged on 2026-01-07 and labeled for the Anchor 1.1
-> release**. As of early 2026 the latest stable line is **0.32.x, which does NOT
-> include it**. Treat it as an *if-your-version-has-it* enhancement, never as
-> universally shipped.
+> The latest stable Anchor is **1.0.x (1.0.2 as of mid-2026)**, and PR #4060
+> (`Migration<'info, From, To>`) is **merged**. But "merged" is not the same as
+> "in the build you have installed" - verify before you rely on it, never assume.
 >
-> **Verify before you rely on it (do not assume):**
-> 1. `anchor --version` and compare against the version that shipped this type.
+> **Verify (do not assume):**
+> 1. `anchor --version` to see what you actually have.
 > 2. Check the [Anchor CHANGELOG](https://github.com/coral-xyz/anchor/blob/master/CHANGELOG.md)
 >    for the `Migration` entry and the exact release it landed in.
 > 3. Try to import it: `use anchor_lang::prelude::Migration;` (or wherever the
 >    changelog says it lives) and `anchor build`. If it does not resolve, your
->    version does not have it.
+>    installed 1.0.x does not expose it.
 >
-> **If it is absent, use the manual `realloc` pattern in `realloc-migration.md`.**
-> That pattern is the portable default and works on every Anchor version. The
-> `Migration` type only saves boilerplate where it is available.
+> **If it is absent, use the manual `realloc`/`resize` pattern in
+> `realloc-migration.md`.** That pattern is the portable default and works on every
+> Anchor version. The `Migration` type only saves boilerplate where it is available.
 
 ## Contents
 
@@ -152,7 +151,7 @@ strictness and idempotency.
 
 | Error / symptom | Cause | Fix |
 | --- | --- | --- |
-| `Migration` type / import does not resolve | Your Anchor version predates the type (e.g. 0.32.x) | Upgrade to the release that ships it, or use the manual pattern in `realloc-migration.md` |
+| `Migration` type / import does not resolve | Your installed Anchor does not expose it (older than the 1.0.x release that ships it) | Upgrade to the release that ships it, or use the manual pattern in `realloc-migration.md` |
 | `AccountNotMigrated` on exit | A code path reached the end without calling `.migrate(..)` | Call `.migrate(..)` on every path, or branch out early before touching the account |
 | `AccountAlreadyMigrated` | Migration ran on an account already converted | Guard the call site (skip already-`To` accounts), or treat the error as "already done" |
 | Build fails on `From`/`To` bounds | Missing trait bounds Anchor requires on the layouts | Add the (de)serialize / `InitSpace` derives the changelog specifies |

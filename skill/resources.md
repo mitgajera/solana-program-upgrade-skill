@@ -21,8 +21,8 @@ the version you have installed** (`anchor --version`, `solana --version`).
   the in-place resize constraint group.
   https://www.anchor-lang.com/docs/account-constraints
 - **Anchor PR #4060 - `Migration<'info, From, To>` type** - the new migration
-  account container (merged for the 1.x line; verify it is in your version before
-  relying on it).
+  account container (merged; latest stable Anchor is 1.0.x - verify your installed
+  version exposes it before relying on it).
   https://github.com/coral-xyz/anchor/pull/4060
 
 ## Account versioning & data migration
