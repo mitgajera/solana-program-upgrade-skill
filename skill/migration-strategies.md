@@ -56,6 +56,7 @@ verified - never close before the copy is confirmed.
 pub struct CopyMigrate<'info> {
     #[account(mut, close = receiver)]          // refund old rent on close
     pub old: Account<'info, VaultV1>,
+    // space: 8 = discriminator (Anchor 1.0: VaultV2::DISCRIMINATOR.len() + VaultV2::INIT_SPACE)
     #[account(init, payer = payer, space = 8 + VaultV2::INIT_SPACE,
               seeds = [b"vault_v2", old.authority.as_ref()], bump)]
     pub new: Account<'info, VaultV2>,

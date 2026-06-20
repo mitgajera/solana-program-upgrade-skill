@@ -43,9 +43,13 @@ pub struct Grow<'info> {
 }
 ```
 
-- `realloc = <len>` is the **new total size in bytes**, including the 8-byte
+- `realloc = <len>` is the **new total size in bytes**, including the
   discriminator. Compute it from `8 + T::INIT_SPACE` (Anchor's `#[derive(InitSpace)]`)
-  rather than counting by hand.
+  rather than counting by hand. **Anchor 1.0:** prefer
+  `T::DISCRIMINATOR.len() + T::INIT_SPACE` instead of the magic `8` (default
+  discriminators are still 8 bytes, but custom ones are not). The `8 +` form below
+  is the 0.31 idiom and what the verified example compiles against; on 1.0 use
+  `DISCRIMINATOR.len()`.
 - `realloc::payer` funds rent when growing and **receives** the freed rent when
   shrinking. It must be `mut` and a `Signer`.
 - `realloc::zero` controls whether the reallocated memory is zeroed (see the
@@ -187,6 +191,23 @@ exceeds the per-transaction cap. Note this is the *method*; the Anchor **constra
 is still spelled `realloc = ...` / `realloc::zero = ...` (Anchor has not renamed the
 constraint). Verify what your `solana-program` / `anchor-lang` versions expose
 (`cargo tree`), since this name changed across the 2.x to 3.x transition.
+
+### Anchor 1.0: `CpiContext` takes the program `Pubkey`
+
+The rent-funding `transfer` CPI above passes
+`ctx.accounts.system_program.to_account_info()` - the **Anchor 0.31** form (the
+verified example compiles against 0.31). **On Anchor 1.0,** `CpiContext::new(..)`
+and `new_with_signer(..)` take the program **`Pubkey`** (`.key()`), not an
+`AccountInfo`:
+
+```rust
+// Anchor 0.31:
+CpiContext::new(ctx.accounts.system_program.to_account_info(), Transfer { .. })
+// Anchor 1.0:
+CpiContext::new(ctx.accounts.system_program.key(), Transfer { .. })
+```
+
+Confirm against `anchor --version`; this signature changed in the 1.0 release.
 
 ## Idempotency
 

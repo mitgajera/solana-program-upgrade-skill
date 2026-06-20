@@ -59,7 +59,7 @@ use anchor_lang::prelude::*;
 pub struct MigrateVault<'info> {
     #[account(
         mut,
-        realloc = 8 + VaultV2::INIT_SPACE,   // size for the NEW layout
+        realloc = 8 + VaultV2::INIT_SPACE,   // NEW layout size; Anchor 1.0: VaultV2::DISCRIMINATOR.len() + VaultV2::INIT_SPACE
         realloc::payer = payer,
         realloc::zero = false,
     )]
