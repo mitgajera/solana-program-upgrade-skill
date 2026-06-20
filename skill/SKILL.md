@@ -29,7 +29,7 @@ made survivable.
 ## Golden rules (the safety spine)
 
 1. **Never change a live account layout without a version tag + migration path.**
-   Old accounts are raw bytes; new code reading them with a changed struct →
+   Old accounts are raw bytes; new code reading them with a changed struct ->
    `AccountDidNotDeserialize` or silent corruption. The 8-byte discriminator
    gates *type*, not *version*.
 2. **Simulate against real cloned mainnet state before mainnet.** Always run the
@@ -51,20 +51,20 @@ Follow in order. Each step routes to a focused file for depth.
 1. **Diff the schema** - compare old vs new `#[account]` structs. Identify
    additive vs breaking changes (reorder/remove/retype = breaking).
 2. **Pick a strategy** - eager crank vs lazy migrate-on-touch vs copy-to-new
-   account → `migration-strategies.md`.
-3. **Write versioned structs** - add a version tag, branch on stored version →
+   account -> `migration-strategies.md`.
+3. **Write versioned structs** - add a version tag, branch on stored version ->
    `account-versioning.md`.
-4. **Implement the migration** - manual `realloc` (portable baseline) →
+4. **Implement the migration** - manual `realloc` (portable baseline) ->
    `realloc-migration.md`; or the Anchor `Migration` type *if your version has it*
-   → `anchor-migration-type.md`.
+   -> `anchor-migration-type.md`.
 5. **Simulate on a fork** - clone real accounts, run the upgrade, diff bytes,
-   assert idempotency → `fork-simulation.md`.
+   assert idempotency -> `fork-simulation.md`.
 6. **Secure the authority** - verify/move to Squads multisig before touching
-   mainnet → `upgrade-authority.md`.
-7. **Deploy the binary** - buffer flow, `extend` if larger, IDL, `--final` →
+   mainnet -> `upgrade-authority.md`.
+7. **Deploy the binary** - buffer flow, `extend` if larger, IDL, `--final` ->
    `program-deploy-upgrade.md`.
 8. **Verify & keep a rollback plan** - confirm accounts deserialize; retain prior
-   `.so` and a half-migration recovery path → `rollback-recovery.md`.
+   `.so` and a half-migration recovery path -> `rollback-recovery.md`.
 
 ---
 
@@ -110,7 +110,7 @@ Find the row that matches the situation and read that file.
 
 ## Companion tools
 
-- **Commands:** `/plan-upgrade` (schema diff → migration plan + risk report),
+- **Commands:** `/plan-upgrade` (schema diff -> migration plan + risk report),
   `/simulate-upgrade` (fork, clone, run, diff), `/check-upgrade-authority`
   (audit single-key vs multisig).
 - **Agents:** `program-migration-architect` (design the migration from a schema
